@@ -34,14 +34,19 @@ const INITIAL_VALUES = {
   "soundSystemHours": 8,
   "bedroomTvWatts": 100,
   "bedroomTvHours": 8,
+  costPerkWh: 0.1987
 }
 
-function updatePowerConsumption(values, update) {
+function updatePowerConsumption(values, update, updateCost) {
 
   // do the maths
   let appliances = [];
 
   Object.keys(values).forEach(key => {
+      if (key == 'costPerkWh') {
+        return;
+      }
+
       const appliance = key.replace('Watts', '').replace('Hours', '')
       const valueName = key.replace(appliance, '')
       appliances[appliance] ? appliances[appliance][valueName] = values[key] : appliances[appliance] = { [valueName]: values[key] };
@@ -53,29 +58,23 @@ function updatePowerConsumption(values, update) {
       totalPower += appliances[appliance].Watts * appliances[appliance].Hours
   })
 
+  totalPower = totalPower / 1000
 
   update(totalPower);
-
-  return totalPower;
+  updateCost((values['costPerkWh'] * totalPower).toFixed(2))
 }
 
 function App() {
-  const [powerConsumptionPerkWh, setPowerConsumptionPerkWh] = useState(0);
+  const [powerConsumptionPerkWh, setPowerConsumptionPerkWh] = useState(0.00);
+  const [costPerDay, setCostPerDay] = useState(0.00);
 
   return (
     <div className="App">
       <Formik
         initialValues={INITIAL_VALUES}
+        validateOnMount={true}
         validate={(values) => {
-          const errors = {};
-          if (!values.email) {
-            errors.email = "Required";
-          } else if (
-            !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
-          ) {
-            errors.email = "Invalid email address";
-          }
-          return errors;
+          updatePowerConsumption(values, setPowerConsumptionPerkWh, setCostPerDay)
         }}
         onSubmit={(values, { setSubmitting }) => {
           setTimeout(() => {
@@ -84,8 +83,8 @@ function App() {
           }, 400);
         }}
       >
-        {({ isSubmitting, values }) => (
-          <Form onChange={(e) => updatePowerConsumption(values, setPowerConsumptionPerkWh)}>
+        {({ isSubmitting, values, validateForm }) => (
+          <Form>
             <div>
               <div>
                 <h1>Kitchen</h1>
@@ -346,12 +345,23 @@ function App() {
                   </div>
                 </div>
               </div>
+
+              <h1>Electricity Cost</h1>
+              <div>
+              <label htmlFor="costPerkWh">$ per kWh</label>
+                <Field
+                type="number"
+                id="costPerkWh"
+                name="costPerkWh"
+                />
+              </div>
             </div>
           </Form>
         )}
       </Formik>
       
       <div style={{ paddingTop: '20px' }}>Total power consumption per day <b>{powerConsumptionPerkWh}</b> kWh</div>
+      <div style={{ paddingTop: '20px' }}>Total cost per day <b>$ {costPerDay}</b></div>
     </div>
   );
 }
