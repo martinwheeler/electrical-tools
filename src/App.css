@@ -36,3 +36,19 @@
     transform: rotate(360deg);
   }
 }
+
+.space-sml {
+  padding: 5px;
+}
+
+.space-right-sml {
+  padding-right: 5px;
+}
+
+.resultText {
+  font-size: 30px;
+}
+
+.tabLabelAndIcon {
+  display: flex;
+}
